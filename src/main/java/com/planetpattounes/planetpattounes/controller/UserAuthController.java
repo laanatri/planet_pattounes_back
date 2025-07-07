@@ -7,7 +7,13 @@ import com.planetpattounes.planetpattounes.service.JwtService;
 import com.planetpattounes.planetpattounes.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
@@ -27,26 +33,36 @@ public class UserAuthController {
     }
 
     @PostMapping("/generateToken")
-    public AuthResponse authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
-        );
-        if (authentication.isAuthenticated()) {
-            String token = jwtService.generateToken(authRequest.getUsername());
-            User user = userInfoService.getUserByUsername(authRequest.getUsername());
-            return new AuthResponse(
-                    token,
-                    user.getId(),
-                    user.getUsername(),
-                    user.getEmail(),
-                    user.getFirstname(),
-                    user.getLastname(),
-                    user.getDescription(),
-                    user.getCity(),
-                    user.getRole()
+    public ResponseEntity<?> authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
             );
-        } else {
-            throw new UsernameNotFoundException("Invalid user request!");
+
+            if (authentication.isAuthenticated()) {
+                String token = jwtService.generateToken(authRequest.getUsername());
+                User user = userInfoService.getUserByUsername(authRequest.getUsername());
+                AuthResponse authResponse = new AuthResponse(
+                        token,
+                        user.getId(),
+                        user.getUsername(),
+                        user.getEmail(),
+                        user.getFirstname(),
+                        user.getLastname(),
+                        user.getDescription(),
+                        user.getCity(),
+                        user.getRole()
+                );
+                return ResponseEntity.ok(authResponse);
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Authentication."));
+
+        } catch (UsernameNotFoundException | BadCredentialsException e) {
+            System.err.println("Authentication failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Pseudo ou mot de passe invalide."));
+        } catch (Exception e) {
+            System.err.println("An unexpected error occurred during authentication: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Erreur serveur."));
         }
     }
 
