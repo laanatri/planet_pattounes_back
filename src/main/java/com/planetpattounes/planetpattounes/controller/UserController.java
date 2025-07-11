@@ -18,7 +18,6 @@ public class UserController {
     public User create(@RequestBody User user) {
         return userService.creer(user);
     }
-    // check DOT et mapper (bonne pratique pour pas exposer des choses sensibles)
 
     @GetMapping("/read")
     public List<User> read() {

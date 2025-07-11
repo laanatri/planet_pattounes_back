@@ -17,7 +17,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User creer(User user) {
-
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
         user.setId(null);
@@ -55,13 +54,13 @@ public class UserServiceImpl implements UserService {
                         u.setCity(user.getCity());
                     }
                     return userRepository.save(u);
-                }).orElseThrow(() -> new RuntimeException("User not found")));
+                }).orElseThrow(() -> new RuntimeException("Utilisateur avec l'id " + id + " non trouvé")));
     }
 
     @Override
     public String supprimer(Long id) {
         userRepository.deleteById(id);
-        return "Deleted user !";
+        return "Utilisateur est bien supprimé !";
     }
 
 }
